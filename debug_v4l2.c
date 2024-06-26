@@ -167,7 +167,6 @@ static void countNodes(struct list_head *head) {
 	printk("complete pointer %p\n", notifier->ops->complete);
 	printk("bound pointer %p\n", notifier->ops->bound);
 	printk("unbind pointer %p\n", notifier->ops->unbind);
-	break;
 #endif
 
 	prev_complete = notifier->ops->complete;
