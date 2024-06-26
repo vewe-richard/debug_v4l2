@@ -163,11 +163,9 @@ static void countNodes(struct list_head *head) {
 
 #ifdef NVIDIA
 	//to be sure if bound and unbind is NULL
-	if(notifier->ops->bound != NULL || notifier->ops->unbind != NULL){
-		printk("bound and unbind not NULL, adjust the code\n");
-		break;
-	}
 	printk("complete pointer %p\n", notifier->ops->complete);
+	printk("bound pointer %p\n", notifier->ops->bound);
+	printk("unbind pointer %p\n", notifier->ops->unbind);
 	break;
 #endif
 

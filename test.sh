@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-dmesg -c
+sudo dmesg -c
 make
 sudo insmod debug_v4l2.ko
 sleep 1
