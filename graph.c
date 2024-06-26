@@ -578,7 +578,21 @@ int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 		//my_tegra_channel_s_ctrl(ctrl);
 	}
 #else
-	printk("run to complete2, jiangjqian %p\n", notifier);
+        struct tegra_channel *chan =
+               container_of(notifier, struct tegra_channel, notifier);
+        struct v4l2_ctrl_handler *ctrl_handler;
+        printk("run to complete2, jiangjqian %p\n", notifier);
+        printk("name %s\n", notifier->v4l2_dev->name);
+        printk("chan %p\n", chan);
+
+	ctrl_handler = &(chan->ctrl_handler);
+        printk("ctrl handler %p\n", ctrl_handler);
+
+	printk("ctrls %p %p\n", ctrl_handler->ctrls.prev, ctrl_handler->ctrls.next);
+        ctrl_handler->ctrls.prev = &(ctrl_handler->ctrls);
+        ctrl_handler->ctrls.next = &(ctrl_handler->ctrls);
+
+
 #endif
 
 	return 0;
