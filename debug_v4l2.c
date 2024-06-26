@@ -128,7 +128,8 @@ static int (*prev_complete)(struct v4l2_async_notifier *notifier);
 static int my_complete(struct v4l2_async_notifier *notifier)
 {
 #ifdef NVIDIA
-	printk("my_complete\n");
+	printk("my_complete jiangjqian\n");
+	prev_complete(notifier);
 #else
 	struct sun6i_csi *csi;
 	csi = container_of(notifier->v4l2_dev, struct sun6i_csi, v4l2_dev);
@@ -138,7 +139,7 @@ static int my_complete(struct v4l2_async_notifier *notifier)
 	return 0;
 }
 
-static const struct v4l2_async_notifier_operations my_ops = {
+static struct v4l2_async_notifier_operations my_ops = {
 	.complete = my_complete,
 };
 
@@ -170,8 +171,11 @@ static void countNodes(struct list_head *head) {
 #endif
 
 	prev_complete = notifier->ops->complete;
+
+	my_ops.bound = notifier->ops->bound;
+	my_ops.unbind = notifier->ops->unbind;
 	notifier->ops = &my_ops;
-	notifier->ops->complete(notifier);
+	//notifier->ops->complete(notifier);
 
     }
 }
