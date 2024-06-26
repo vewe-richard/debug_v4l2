@@ -573,7 +573,8 @@ int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 	ctrl_handler = &chan->ctrl_handler;
     	list_for_each(pos, &(ctrl_handler->ctrls)) {
 		ctrl = container_of(pos, struct v4l2_ctrl, node);
-		my_tegra_channel_s_ctrl(ctrl);
+		printk("ctrl %p\n", ctrl);
+		//my_tegra_channel_s_ctrl(ctrl);
 	}
 
 	return 0;
