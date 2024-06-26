@@ -562,6 +562,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 
 int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 {
+#if 0
 	struct tegra_channel *chan =
 		container_of(notifier, struct tegra_channel, notifier);
 
@@ -569,13 +570,16 @@ int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 	struct v4l2_ctrl *ctrl;
         struct list_head *pos;
 
-	printk("run to complete2\n");
+	printk("run to complete2, \n");
 	ctrl_handler = &chan->ctrl_handler;
     	list_for_each(pos, &(ctrl_handler->ctrls)) {
 		ctrl = container_of(pos, struct v4l2_ctrl, node);
 		printk("ctrl %p\n", ctrl);
 		//my_tegra_channel_s_ctrl(ctrl);
 	}
+#else
+	printk("run to complete2, jiangjqian %p\n", notifier);
+#endif
 
 	return 0;
 }
