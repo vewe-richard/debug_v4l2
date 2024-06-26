@@ -13,7 +13,6 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Your Name");
 MODULE_DESCRIPTION("A simple fake V4L2 video driver");
-//#define NVIDIA
 
 struct sun6i_csi {
 	struct device			*dev;

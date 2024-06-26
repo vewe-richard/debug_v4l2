@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
+dmesg -c
 make
-sudo insmod my_module2.ko
+sudo insmod debug_v4l2.ko
 sleep 1
-sudo rmmod my_module2
+sudo rmmod debug_v4l2
 sudo dmesg -c
