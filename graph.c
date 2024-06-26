@@ -39,13 +39,120 @@
 #include <media/mc_common.h>
 #include <media/csi.h>
 
-#include "nvcsi/nvcsi.h"
+//#include "nvcsi/nvcsi.h"
 
 
 MODULE_LICENSE("GPL");
 /* -----------------------------------------------------------------------------
  * Graph Management
  */
+int tegra_media_create_link(struct media_entity *source, u16 source_pad,
+		                struct media_entity *sink, u16 sink_pad, u32 flags)     
+{                                                                       
+	        int ret = 0;                                                    
+		                                                                        
+		        ret = media_create_pad_link(source, source_pad,                 
+					                               sink, sink_pad, flags);                  
+			        return ret;                                                     
+}                                                                       
+
+
+static int tegra_channel_close(struct file *fp){
+	return 0;
+}
+
+static int tegra_channel_open(struct file *fp){
+	return 0;
+}
+static long video_ioctl2(struct file *file,                
+		               unsigned int cmd, unsigned long arg) 
+{                                                   
+	return 0;
+}
+
+static const struct v4l2_file_operations tegra_channel_fops = {
+	.owner		= THIS_MODULE,
+	.unlocked_ioctl	= video_ioctl2,
+#ifdef CONFIG_COMPAT
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+	.compat_ioctl32 = tegra_channel_compat_ioctl,
+#else
+	.compat_ioctl32 = video_ioctl2,
+#endif
+#endif
+	.open		= tegra_channel_open,
+	.release	= tegra_channel_close,
+	.read		= vb2_fop_read,
+	.poll		= vb2_fop_poll,
+	.mmap		= vb2_fop_mmap,
+};
+
+static int my_tegra_channel_init_video(struct tegra_channel *chan)
+{
+	struct tegra_mc_vi *vi = chan->vi;
+	int ret = 0, len = 0;
+
+	if (chan->video) {
+		dev_err(&chan->video->dev, "video device already allocated\n");
+		return 0;
+	}
+
+	chan->video = video_device_alloc();
+
+	/* Initialize the media entity... */
+	chan->pad.flags = MEDIA_PAD_FL_SINK;
+	ret = tegra_media_entity_init(&chan->video->entity, 1,
+					&chan->pad, false, false);
+	if (ret < 0) {
+		video_device_release(chan->video);
+		dev_err(&chan->video->dev, "failed to init video entity\n");
+		return ret;
+	}
+
+	/* init control handler */
+	ret = v4l2_ctrl_handler_init(&chan->ctrl_handler, MAX_CID_CONTROLS);
+	if (chan->ctrl_handler.error) {
+		dev_err(&chan->video->dev, "failed to init control handler\n");
+		goto ctrl_init_error;
+	}
+
+	/* init video node... */
+	chan->video->fops = &tegra_channel_fops;
+	chan->video->v4l2_dev = &vi->v4l2_dev;
+	chan->video->queue = &chan->queue;
+	len = snprintf(chan->video->name, sizeof(chan->video->name), "%s-%s-%u",
+		dev_name(vi->dev), chan->pg_mode ? "tpg" : "output",
+		chan->pg_mode ? (chan->id - vi->num_channels) : chan->port[0]);
+	if (len < 0) {
+		ret = -EINVAL;
+		goto ctrl_init_error;
+	}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+	chan->video->vfl_type = VFL_TYPE_GRABBER;
+#else
+	chan->video->vfl_type = VFL_TYPE_VIDEO;
+	chan->video->device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
+	chan->video->device_caps |= V4L2_CAP_EXT_PIX_FORMAT;
+#endif
+	chan->video->vfl_dir = VFL_DIR_RX;
+	chan->video->release = video_device_release_empty;
+	chan->video->ioctl_ops = NULL; //&tegra_channel_ioctl_ops;
+	chan->video->ctrl_handler = &chan->ctrl_handler;
+	chan->video->lock = &chan->video_lock;
+
+	video_set_drvdata(chan->video, chan);
+
+	return ret;
+
+ctrl_init_error:
+	video_device_release(chan->video);
+	media_entity_cleanup(&chan->video->entity);
+	v4l2_ctrl_handler_free(&chan->ctrl_handler);
+	return ret;
+}
+
+
 
 static struct tegra_vi_graph_entity *
 tegra_vi_graph_find_entity(struct tegra_channel *chan,
@@ -345,16 +452,132 @@ static int tegra_vi_graph_build_links(struct tegra_channel *chan)
 		return -EINVAL;
 	}
 
+#ifdef KEEP_OLD
 	ret = tegra_channel_init_subdevices(chan);
 	if (ret < 0) {
 		dev_err(chan->vi->dev, "Failed to initialize sub-devices\n");
 		return -EINVAL;
 	}
+#endif
 
 	return 0;
 }
 
+static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
+	struct tegra_channel *chan = container_of(ctrl->handler,
+				struct tegra_channel, ctrl_handler);
+	int err = 0;
 
+	/* Check device is busy or not, While setting bypass mode*/
+	/*if (vb2_is_busy(&chan->queue) && (TEGRA_CAMERA_CID_VI_BYPASS_MODE == ctrl->id)) {
+		return -EBUSY;
+	}*/
+	printk("ctrl->id %d TEGRA_CAMERA_CID_VI_BYPASS_MODE %d\n",
+			ctrl->id, TEGRA_CAMERA_CID_VI_BYPASS_MODE);
+
+	switch (ctrl->id) {
+	case TEGRA_CAMERA_CID_GAIN_TPG:
+		if(0){
+			if (chan->vi->csi != NULL &&
+				chan->vi->csi->tpg_gain_ctrl) {
+				struct v4l2_subdev *sd = chan->subdev_on_csi;
+
+				err = tegra_csi_tpg_set_gain(sd, &(ctrl->val));
+			}
+		}
+		printk("csi %p\n", chan->vi->csi);
+		break;
+	case TEGRA_CAMERA_CID_VI_BYPASS_MODE:
+		/*
+		if (switch_ctrl_qmenu[ctrl->val] == SWITCH_ON)
+			chan->bypass = true;
+		else if (chan->vi->bypass) {
+			dev_dbg(&chan->video->dev,
+				"can't disable bypass mode\n");
+			dev_dbg(&chan->video->dev,
+				"because the VI/CSI is in bypass mode\n");
+			chan->bypass = true;
+		} else
+			chan->bypass = false;
+		*/
+		break;
+	case TEGRA_CAMERA_CID_OVERRIDE_ENABLE:
+		/*{
+			struct v4l2_subdev *sd = chan->subdev_on_csi;
+			struct camera_common_data *s_data =
+				to_camera_common_data(sd->dev);
+
+			if (!s_data)
+				break;
+			if (switch_ctrl_qmenu[ctrl->val] == SWITCH_ON) {
+				s_data->override_enable = true;
+				dev_dbg(&chan->video->dev,
+					"enable override control\n");
+			} else {
+				s_data->override_enable = false;
+				dev_dbg(&chan->video->dev,
+					"disable override control\n");
+			}
+		}*/
+		break;
+	case TEGRA_CAMERA_CID_VI_HEIGHT_ALIGN:
+		/*
+		chan->height_align = ctrl->val;
+		tegra_channel_update_format(chan, chan->format.width,
+				chan->format.height,
+				chan->format.pixelformat,
+				&chan->fmtinfo->bpp, 0);
+				*/
+		break;
+	case TEGRA_CAMERA_CID_VI_SIZE_ALIGN:
+		/*
+		chan->size_align = size_align_ctrl_qmenu[ctrl->val];
+		tegra_channel_update_format(chan, chan->format.width,
+				chan->format.height,
+				chan->format.pixelformat,
+				&chan->fmtinfo->bpp, 0);
+				*/
+		break;
+	case TEGRA_CAMERA_CID_LOW_LATENCY:
+		//chan->low_latency = ctrl->val;
+		break;
+	case TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE:
+		/*
+		chan->preferred_stride = ctrl->val;
+		tegra_channel_update_format(chan, chan->format.width,
+				chan->format.height,
+				chan->format.pixelformat,
+				&chan->fmtinfo->bpp,
+				chan->preferred_stride);
+				*/
+		break;
+	default:
+		dev_err(&chan->video->dev, "%s: Invalid ctrl %u\n",
+			__func__, ctrl->id);
+		err = -EINVAL;
+	}
+
+	return err;
+}
+
+int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
+{
+	struct tegra_channel *chan =
+		container_of(notifier, struct tegra_channel, notifier);
+
+	struct v4l2_ctrl_handler *ctrl_handler;
+	struct v4l2_ctrl *ctrl;
+        struct list_head *pos;
+
+	printk("run to complete2\n");
+	ctrl_handler = &chan->ctrl_handler;
+    	list_for_each(pos, &(ctrl_handler->ctrls)) {
+		ctrl = container_of(pos, struct v4l2_ctrl, node);
+		my_tegra_channel_s_ctrl(ctrl);
+	}
+
+	return 0;
+}
 
 int my_tegra_vi_graph_notify_complete(struct v4l2_async_notifier *notifier)
 {
@@ -366,7 +589,7 @@ int my_tegra_vi_graph_notify_complete(struct v4l2_async_notifier *notifier)
 	dev_dbg(chan->vi->dev, "notify complete, all subdevs registered\n");
 
 	/* Allocate video_device */
-	ret = tegra_channel_init_video(chan);
+	ret = my_tegra_channel_init_video(chan);
 	if (ret < 0) {
 		dev_err(chan->vi->dev, "failed to allocate video device %s\n",
 			chan->video->name);

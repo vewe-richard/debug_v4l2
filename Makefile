@@ -8,11 +8,17 @@ ifeq ($(ARCH), x86_64)
     INCLUDE_DIR1 = /home/richard/work/knet/Linux_for_Tegra/source/public/kernel/nvidia/include/
     INCLUDE_DIR2 = /home/richard/work/knet/Linux_for_Tegra/source/public/kernel/nvidia/drivers/video/tegra/host/
     EXTRA_CFLAGS := -I$(INCLUDE_DIR1) -I$(INCLUDE_DIR2)
-    obj-m += debug_v4l2.o graph.o camera_version_utils.o
+    obj-m += my_debug_v4l2.o
+
+    my_debug_v4l2-objs = debug_v4l2.o graph.o camera_version_utils.o
 else
     KERNELDIR := /lib/modules/$(shell uname -r)/build
-    EXTRA_CFLAGS := -DNVIDIA
-    obj-m += debug_v4l2.o graph.o
+    INCLUDE_DIR1 = /usr/src/linux-headers-5.10.192-tegra-ubuntu20.04_aarch64/nvidia/include
+
+    EXTRA_CFLAGS := -DNVIDIA -I$(INCLUDE_DIR1)
+    obj-m += my_debug_v4l2.o
+
+    my_debug_v4l2-objs = debug_v4l2.o graph.o
 endif
 
 all:

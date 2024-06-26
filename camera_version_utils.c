@@ -40,7 +40,7 @@ bool tegra_is_v4l2_subdev(struct media_entity *entity)
 }
 EXPORT_SYMBOL(tegra_is_v4l2_subdev);
 
-int tegra_media_create_link(struct media_entity *source, u16 source_pad,
+int aa_tegra_media_create_link(struct media_entity *source, u16 source_pad,
 		struct media_entity *sink, u16 sink_pad, u32 flags)
 {
 	int ret = 0;
@@ -55,7 +55,7 @@ bool tegra_v4l2_match_dv_timings(struct v4l2_dv_timings *t1,
 				unsigned pclock_delta,
 				bool match_reduced_fps)
 {
-	return v4l2_match_dv_timings(t1, t2, pclock_delta, match_reduced_fps);
+	return 0; // v4l2_match_dv_timings(t1, t2, pclock_delta, match_reduced_fps);
 }
 EXPORT_SYMBOL(tegra_v4l2_match_dv_timings);
 

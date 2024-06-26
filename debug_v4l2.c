@@ -126,22 +126,21 @@ static const struct v4l2_async_notifier_operations sun6i_csi_async_ops = {
 static int (*prev_complete)(struct v4l2_async_notifier *notifier);
 
 
+extern int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier);
 extern int my_tegra_vi_graph_notify_complete(struct v4l2_async_notifier *notifier);
 
 static int my_complete(struct v4l2_async_notifier *notifier)
 {
 #ifdef NVIDIA
 	printk("my_complete jiangjqian\n");
-	//prev_complete(notifier);
-	return my_tegra_vi_graph_notify_complete(notifier);
 #else
 	struct sun6i_csi *csi;
 	csi = container_of(notifier->v4l2_dev, struct sun6i_csi, v4l2_dev);
 	printk("my_complete csi v4l2_dev name %s\n", csi->v4l2_dev.name);
-	//prev_complete(notifier);
-	return my_tegra_vi_graph_notify_complete(notifier);
 #endif
-	return 0;
+
+	my_tegra_vi_graph_notify_complete2(notifier);
+	return prev_complete(notifier);
 }
 
 static struct v4l2_async_notifier_operations my_ops = {
@@ -179,7 +178,10 @@ static void countNodes(struct list_head *head) {
 	my_ops.bound = notifier->ops->bound;
 	my_ops.unbind = notifier->ops->unbind;
 	notifier->ops = &my_ops;
-	//notifier->ops->complete(notifier);
+
+#ifndef NVIDIA
+	notifier->ops->complete(notifier);
+#endif
 
     }
 }
