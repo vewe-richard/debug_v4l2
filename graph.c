@@ -655,7 +655,7 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 		}
 		printk("3: ops %p master %p controls %d %p\n", ctrl->ops, master, master->ncontrols,
 				ctrl->ops->s_ctrl);
-		printk("tegra_channel_s_ctrl %p, %p\n", tegra_channel_s_ctrl, ctrl->ops->s_ctrl);
+		printk("my__v4l2_ctrl_handler_setup %p, %p\n", my__v4l2_ctrl_handler_setup, ctrl->ops->s_ctrl);
 
 		my_tegra_channel_s_ctrl(master); //TODO? will this be called?
 
