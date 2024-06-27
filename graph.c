@@ -25,6 +25,7 @@
 #else
 #include <soc/tegra/fuse.h>
 #endif
+#include <media/tegra_camera_core.h>
 
 #include <media/media-device.h>
 #include <media/v4l2-async.h>
@@ -151,22 +152,21 @@ ctrl_init_error:
 	v4l2_ctrl_handler_free(&chan->ctrl_handler);
 	return ret;
 }
-
-
-
 static struct tegra_vi_graph_entity *
 tegra_vi_graph_find_entity(struct tegra_channel *chan,
-		       const struct device_node *node)
+                      const struct device_node *node)
 {
-	struct tegra_vi_graph_entity *entity;
+       struct tegra_vi_graph_entity *entity;
 
-	list_for_each_entry(entity, &chan->entities, list) {
-		if (entity->node == node)
-			return entity;
-	}
+       list_for_each_entry(entity, &chan->entities, list) {
+               if (entity->node == node)
+                       return entity;
+       }
 
-	return NULL;
+       return NULL;
 }
+
+
 
 static int tegra_vi_graph_build_one(struct tegra_channel *chan,
 				    struct tegra_vi_graph_entity *entity)
@@ -463,6 +463,8 @@ static int tegra_vi_graph_build_links(struct tegra_channel *chan)
 	return 0;
 }
 
+
+
 static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 	struct tegra_channel *chan = container_of(ctrl->handler,
 				struct tegra_channel, ctrl_handler);
@@ -472,9 +474,6 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 	/*if (vb2_is_busy(&chan->queue) && (TEGRA_CAMERA_CID_VI_BYPASS_MODE == ctrl->id)) {
 		return -EBUSY;
 	}*/
-	printk("ctrl->id %d TEGRA_CAMERA_CID_VI_BYPASS_MODE %d\n",
-			ctrl->id, TEGRA_CAMERA_CID_VI_BYPASS_MODE);
-
 	switch (ctrl->id) {
 	case TEGRA_CAMERA_CID_GAIN_TPG:
 		if(0){
@@ -501,8 +500,8 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 			chan->bypass = false;
 		*/
 		break;
-	case TEGRA_CAMERA_CID_OVERRIDE_ENABLE:
-		/*{
+	case TEGRA_CAMERA_CID_OVERRIDE_ENABLE:    //
+		{
 			struct v4l2_subdev *sd = chan->subdev_on_csi;
 			struct camera_common_data *s_data =
 				to_camera_common_data(sd->dev);
@@ -518,17 +517,17 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 				dev_dbg(&chan->video->dev,
 					"disable override control\n");
 			}
-		}*/
+		}
 		break;
-	case TEGRA_CAMERA_CID_VI_HEIGHT_ALIGN:
-		/*
+	case TEGRA_CAMERA_CID_VI_HEIGHT_ALIGN: //
+/*
 		chan->height_align = ctrl->val;
 		tegra_channel_update_format(chan, chan->format.width,
 				chan->format.height,
 				chan->format.pixelformat,
 				&chan->fmtinfo->bpp, 0);
-				*/
 		break;
+		*/
 	case TEGRA_CAMERA_CID_VI_SIZE_ALIGN:
 		/*
 		chan->size_align = size_align_ctrl_qmenu[ctrl->val];
@@ -538,18 +537,20 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 				&chan->fmtinfo->bpp, 0);
 				*/
 		break;
-	case TEGRA_CAMERA_CID_LOW_LATENCY:
-		//chan->low_latency = ctrl->val;
+	case TEGRA_CAMERA_CID_LOW_LATENCY:  //
+		chan->low_latency = ctrl->val;
 		break;
-	case TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE:
+	case TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE:  //
+		printk("fmtinfo %p",chan->fmtinfo);
 		/*
 		chan->preferred_stride = ctrl->val;
 		tegra_channel_update_format(chan, chan->format.width,
 				chan->format.height,
 				chan->format.pixelformat,
 				&chan->fmtinfo->bpp,
-				chan->preferred_stride);
-				*/
+				0);
+
+		*/
 		break;
 	default:
 		dev_err(&chan->video->dev, "%s: Invalid ctrl %u\n",
@@ -577,6 +578,18 @@ static void cur_to_new(struct v4l2_ctrl *ctrl)
 	ptr_to_ptr(ctrl, ctrl->p_cur, ctrl->p_new);
 }
 
+static const struct tegra_video_format my__tegra_default_format[] = {
+        {
+                TEGRA_VF_DEF,
+                10,
+                MEDIA_BUS_FMT_SRGGB10_1X10,
+                {2, 1},
+                TEGRA_IMAGE_FORMAT_DEF,
+                TEGRA_IMAGE_DT_RAW10,
+                V4L2_PIX_FMT_SRGGB10,
+                "RGRG.. GBGB..",
+        },
+};
 
 static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl) 
 {                                                            
@@ -602,7 +615,6 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
      }
 #endif
 	struct v4l2_ctrl *ctrl;
-	int ret = 0;
 
 	if (hdl == NULL)
 		return 0;
@@ -637,7 +649,9 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 		}
 		printk("3: ops %p master %p controls %d %p\n", ctrl->ops, master, master->ncontrols,
 				ctrl->ops->s_ctrl);
-		my_tegra_channel_s_ctrl(master);
+		printk("tegra_channel_s_ctrl %p, %p\n", tegra_channel_s_ctrl, ctrl->ops->s_ctrl);
+
+		my_tegra_channel_s_ctrl(master); //TODO? will this be called?
 
 	}
 
@@ -668,6 +682,9 @@ static int my_vi4_add_ctrls(struct tegra_channel *chan)
         ctrls = &(chan->ctrl_handler.ctrls);
 	printk("my add ctrls: prev %p next %p\n", ctrls->prev, ctrls->next);
 
+
+//	chan->fmtinfo = &my__tegra_default_format[0];
+//	chan->preferred_stride = 0 ;
 	my__v4l2_ctrl_handler_setup(&(chan->ctrl_handler));
 	printk("set it as empty to avoid crash\n");
 	ctrls->prev = ctrls->next = ctrls;
@@ -705,9 +722,11 @@ int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 	ctrl_handler = &(chan->ctrl_handler);
         printk("ctrl handler %p\n", ctrl_handler);
 
+	//chan->fmtinfo = &my__tegra_default_format[0];
+	//chan->preferred_stride = 0 ;
 	printk("ctrls %p %p\n", ctrl_handler->ctrls.prev, ctrl_handler->ctrls.next);
-        ctrl_handler->ctrls.prev = &(ctrl_handler->ctrls);
-        ctrl_handler->ctrls.next = &(ctrl_handler->ctrls);
+        //ctrl_handler->ctrls.prev = &(ctrl_handler->ctrls);
+        //ctrl_handler->ctrls.next = &(ctrl_handler->ctrls);
 
 	//change vi
 	prev_vi_add_ctrls = chan->vi->fops->vi_add_ctrls;
@@ -715,7 +734,6 @@ int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 	memcpy(&my_vi2_fops, chan->vi->fops, sizeof(struct tegra_vi_fops));
 	my_vi2_fops.vi_add_ctrls = my_vi4_add_ctrls;
 	chan->vi->fops = &my_vi2_fops;
-
 
 #endif
 
