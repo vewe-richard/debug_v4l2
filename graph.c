@@ -484,7 +484,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 				err = tegra_csi_tpg_set_gain(sd, &(ctrl->val));
 			}
 		}
-		printk("csi %p\n", chan->vi->csi);
+		printk("s_ctrl: csi %p\n", chan->vi->csi);
 		break;
 	case TEGRA_CAMERA_CID_VI_BYPASS_MODE:
 		/*
@@ -499,6 +499,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 		} else
 			chan->bypass = false;
 		*/
+		printk("s_ctrl: bypass\n");
 		break;
 	case TEGRA_CAMERA_CID_OVERRIDE_ENABLE:    //
 		{
@@ -506,6 +507,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 			struct camera_common_data *s_data =
 				to_camera_common_data(sd->dev);
 
+			printk("s_ctrl: overrride\n");
 			if (!s_data)
 				break;
 			if (switch_ctrl_qmenu[ctrl->val] == SWITCH_ON) {
@@ -520,15 +522,17 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 		}
 		break;
 	case TEGRA_CAMERA_CID_VI_HEIGHT_ALIGN: //
+		printk("s_ctrl: height align\n");
 /*
 		chan->height_align = ctrl->val;
 		tegra_channel_update_format(chan, chan->format.width,
 				chan->format.height,
 				chan->format.pixelformat,
 				&chan->fmtinfo->bpp, 0);
-		break;
 		*/
+		break;
 	case TEGRA_CAMERA_CID_VI_SIZE_ALIGN:
+		printk("s_ctrl: size align\n");
 		/*
 		chan->size_align = size_align_ctrl_qmenu[ctrl->val];
 		tegra_channel_update_format(chan, chan->format.width,
@@ -538,6 +542,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 				*/
 		break;
 	case TEGRA_CAMERA_CID_LOW_LATENCY:  //
+		printk("s_ctrl: low_latency\n");
 		chan->low_latency = ctrl->val;
 		break;
 	case TEGRA_CAMERA_CID_VI_PREFERRED_STRIDE:  //
@@ -553,6 +558,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 		*/
 		break;
 	default:
+		printk("s_ctrl: Invalid ctrl\n");
 		dev_err(&chan->video->dev, "%s: Invalid ctrl %u\n",
 			__func__, ctrl->id);
 		err = -EINVAL;
