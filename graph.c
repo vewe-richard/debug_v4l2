@@ -566,8 +566,11 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 {                                                            
      struct v4l2_ctrl *ctrl;                              
      //int ret = 0;                                         
-			                                                             
-				                                                             
+
+     ctrl = container_of(hdl->ctrls.next, struct v4l2_ctrl, node);
+     printk("head %p  next %p, prev %p, pos %p\n", &hdl->ctrls, hdl->ctrls.next, 
+		     hdl->ctrls.prev, ctrl);
+#if 0				                                                             
      //lockdep_assert_held(hdl->lock);                      
      list_for_each_entry(ctrl, &hdl->ctrls, node) {
 	     //ctrl->done = false;                          
@@ -578,6 +581,7 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
      list_for_each_entry(ctrl, &hdl->ctrls, node) {       
 
      }
+#endif
      return 0;
 }
 
