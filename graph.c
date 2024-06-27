@@ -462,7 +462,7 @@ static int tegra_vi_graph_build_links(struct tegra_channel *chan)
 
 	return 0;
 }
-
+#if 0
 static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 	struct tegra_channel *chan = container_of(ctrl->handler,
 				struct tegra_channel, ctrl_handler);
@@ -559,6 +559,20 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 
 	return err;
 }
+#endif
+
+static int my_vi4_add_ctrls(struct tegra_channel *chan)  
+{                                                     
+	struct list_head *ctrls;
+
+        ctrls = &(chan->ctrl_handler.ctrls);
+	printk("my add ctrls: prev %p next %p\n", ctrls->prev, ctrls->next);
+	ctrls->prev = ctrls->next = ctrls;
+	return 0;
+}
+
+static struct tegra_vi_fops my_vi2_fops = { 
+};
 
 int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 {
@@ -591,6 +605,11 @@ int my_tegra_vi_graph_notify_complete2(struct v4l2_async_notifier *notifier)
 	printk("ctrls %p %p\n", ctrl_handler->ctrls.prev, ctrl_handler->ctrls.next);
         ctrl_handler->ctrls.prev = &(ctrl_handler->ctrls);
         ctrl_handler->ctrls.next = &(ctrl_handler->ctrls);
+
+	//change vi
+	memcpy(&my_vi2_fops, chan->vi->fops, sizeof(struct tegra_vi_fops));
+	my_vi2_fops.vi_add_ctrls = my_vi4_add_ctrls;
+	chan->vi->fops = &my_vi2_fops;
 
 
 #endif
