@@ -561,6 +561,23 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 }
 #endif
 
+/* Copy the one value to another. */
+static void ptr_to_ptr(struct v4l2_ctrl *ctrl,
+		       union v4l2_ctrl_ptr from, union v4l2_ctrl_ptr to)
+{
+	if (ctrl == NULL)
+		return;
+	memcpy(to.p, from.p_const, ctrl->elems * ctrl->elem_size);
+}
+
+/* Copy the current value to the new value */
+static void cur_to_new(struct v4l2_ctrl *ctrl)
+{
+	if (ctrl == NULL)
+		return;
+	ptr_to_ptr(ctrl, ctrl->p_cur, ctrl->p_new);
+}
+
 
 static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl) 
 {                                                            
@@ -600,14 +617,28 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 		struct v4l2_ctrl *master = ctrl->cluster[0];
 		int i;
 
-		printk("ctrl %p type %d handler %p ops %p master %p controls %d\n", ctrl, ctrl->type,
-			ctrl->handler, ctrl->ops, master, master->ncontrols);
+		printk("1: ctrl %p type %d ops %p master %p controls %d\n", ctrl, ctrl->type,
+			ctrl->ops, master, master->ncontrols);
 
 		/* Skip if this control was already handled by a cluster. */
 		/* Skip button controls and read-only controls. */
 		if (ctrl->done || ctrl->type == V4L2_CTRL_TYPE_BUTTON ||
 		    (ctrl->flags & V4L2_CTRL_FLAG_READ_ONLY))
 			continue;
+
+		printk("2: ctrl %p type %d ops %p master %p controls %d\n", ctrl, ctrl->type,
+			ctrl->ops, master, master->ncontrols);
+
+		for (i = 0; i < master->ncontrols; i++) {
+			if (master->cluster[i]) {
+				cur_to_new(master->cluster[i]);
+				master->cluster[i]->is_new = 1;
+				master->cluster[i]->done = true;
+			}
+		}
+		printk("3: ctrl %p type %d ops %p master %p controls %d\n", ctrl, ctrl->type,
+			ctrl->ops, master, master->ncontrols);
+
 	}
 
 #if 0				                                                             
