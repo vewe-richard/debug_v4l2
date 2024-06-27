@@ -574,8 +574,8 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 
      list_for_each_entry(ctrl, &hdl->ctrls, node) {       
 	count ++;
-	printk("%d: ctrl %p\n", count, ctrl);
-	if(count > 10) break;
+	printk("%d: ctrl %p type %d\n", count, ctrl, ctrl->type);
+	if(count > 100) break;
      }
 #if 0				                                                             
      //lockdep_assert_held(hdl->lock);                      
