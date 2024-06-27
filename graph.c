@@ -564,6 +564,7 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 
 static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl) 
 {                                                            
+#if 0
      struct v4l2_ctrl *ctrl;                              
      //int ret = 0;                                         
      int count = 0;
@@ -583,6 +584,32 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 	if(count > 100) break;
 
      }
+#endif
+	struct v4l2_ctrl *ctrl;
+	int ret = 0;
+
+	if (hdl == NULL)
+		return 0;
+
+	lockdep_assert_held(hdl->lock);
+
+	list_for_each_entry(ctrl, &hdl->ctrls, node)
+		ctrl->done = false;
+
+	list_for_each_entry(ctrl, &hdl->ctrls, node) {
+		struct v4l2_ctrl *master = ctrl->cluster[0];
+		int i;
+
+		printk("ctrl %p type %d handler %p ops %p master %p controls %d\n", ctrl, ctrl->type,
+			ctrl->handler, ctrl->ops, master, master->ncontrols);
+
+		/* Skip if this control was already handled by a cluster. */
+		/* Skip button controls and read-only controls. */
+		if (ctrl->done || ctrl->type == V4L2_CTRL_TYPE_BUTTON ||
+		    (ctrl->flags & V4L2_CTRL_FLAG_READ_ONLY))
+			continue;
+	}
+
 #if 0				                                                             
      //lockdep_assert_held(hdl->lock);                      
      list_for_each_entry(ctrl, &hdl->ctrls, node) {
