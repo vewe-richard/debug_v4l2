@@ -626,8 +626,8 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 		    (ctrl->flags & V4L2_CTRL_FLAG_READ_ONLY))
 			continue;
 
-		printk("2: ctrl %p type %d ops %p master %p controls %d\n", ctrl, ctrl->type,
-			ctrl->ops, master, master->ncontrols);
+		printk("2: ops %p master %p controls %d %p\n", ctrl->ops, master, master->ncontrols,
+				ctrl->ops->s_ctrl);
 
 		for (i = 0; i < master->ncontrols; i++) {
 			if (master->cluster[i]) {
@@ -636,8 +636,8 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 				master->cluster[i]->done = true;
 			}
 		}
-		printk("3: ctrl %p type %d ops %p master %p controls %d\n", ctrl, ctrl->type,
-			ctrl->ops, master, master->ncontrols);
+		printk("3: ops %p master %p controls %d %p\n", ctrl->ops, master, master->ncontrols,
+				ctrl->ops->s_ctrl);
 
 	}
 
