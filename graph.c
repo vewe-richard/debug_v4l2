@@ -462,7 +462,7 @@ static int tegra_vi_graph_build_links(struct tegra_channel *chan)
 
 	return 0;
 }
-#if 0
+
 static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 	struct tegra_channel *chan = container_of(ctrl->handler,
 				struct tegra_channel, ctrl_handler);
@@ -559,7 +559,6 @@ static int my_tegra_channel_s_ctrl(struct v4l2_ctrl *ctrl){
 
 	return err;
 }
-#endif
 
 /* Copy the one value to another. */
 static void ptr_to_ptr(struct v4l2_ctrl *ctrl,
@@ -638,6 +637,7 @@ static int my__v4l2_ctrl_handler_setup(struct v4l2_ctrl_handler *hdl)
 		}
 		printk("3: ops %p master %p controls %d %p\n", ctrl->ops, master, master->ncontrols,
 				ctrl->ops->s_ctrl);
+		my_tegra_channel_s_ctrl(master);
 
 	}
 
