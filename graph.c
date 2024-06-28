@@ -682,11 +682,18 @@ static int (*prev_vi_add_ctrls)(struct tegra_channel *chan);
 static int my_vi4_add_ctrls(struct tegra_channel *chan)  
 {                                                     
 	struct list_head *ctrls;
+	int i;
 
 	printk("call prev vi_add_ctrls");
 	prev_vi_add_ctrls(chan);
         ctrls = &(chan->ctrl_handler.ctrls);
 	printk("my add ctrls: prev %p next %p\n", ctrls->prev, ctrls->next);
+
+
+	for (i = 0; i < chan->num_video_formats; ++i) {
+		printk("%d: videeo format %d 0x%x\n", i, chan->video_formats[i]->code,
+				chan->video_formats[i]->code);
+	}
 
 
 //	chan->fmtinfo = &my__tegra_default_format[0];
